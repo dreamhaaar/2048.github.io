@@ -116,6 +116,8 @@ function slideLeft(){
     for(let r = 0; r < rows; r++){
         let row = board[r];
 
+        let originalRow = row.slice();
+
         row = slide(row);
 
         board[r] = row;
@@ -124,6 +126,15 @@ function slideLeft(){
             let tile = document.getElementById(r.toString() + "-" + c.toString());
             let num = board[r][c];
             updateTile(tile, num);
+
+            if(originalRow[c] !== num && num !== 0){
+                //speciefies animation style and duration
+                tile.style.animation = "slide-from-right 0.3s";
+                setTimeout(() => {
+                    tile.style.animation = "";
+                }, 300);
+            }
+
         }
 
     }
@@ -135,6 +146,8 @@ function slideRight(){
 
     for(let r = 0; r < rows; r++){
         let row = board[r];
+
+        let originalRow = row.slice();
 
         //reverse the order of the array 
         row.reverse();
@@ -149,6 +162,14 @@ function slideRight(){
             let tile = document.getElementById(r.toString() + "-" + c.toString());
             let num = board[r][c];
             updateTile(tile, num);
+
+            if(originalRow[c] !== num && num !== 0){
+				tile.style.animation = "slide-from-left 0.3s";
+				setTimeout(()=>{
+					tile.style.animation = "";
+				}, 300);
+            }
+
         }
 
     }
@@ -162,7 +183,17 @@ function slideUp(){
 
         let row = [board[0][c], board[1][c], board[2][c], board[3][c]];
 
+        let originalRow = row.slice();
+
         row = slide(row);
+
+        //check which tiles have changed in this column
+        let changedIndices = [];
+        for(let r = 0; r < rows; r++){
+            if(originalRow[r] !== row[r]){
+                changedIndices.push(r);
+            }
+        }
 
         for(let r = 0; r < rows; r++){
             
@@ -171,6 +202,13 @@ function slideUp(){
             let tile = document.getElementById(r.toString() + "-" + c.toString());
             let num = board[r][c];
             updateTile(tile, num);
+
+            if(changedIndices.includes(r) && num !== 0){
+                tile.style.animation = "slide-from-bottom 0.3s";
+                setTimeout(() => {
+                    tile.style.animation = "";
+                }, 300);
+            }
 
         }
 
@@ -185,9 +223,18 @@ function slideDown(){
 
         let row = [board[0][c], board[1][c], board[2][c], board[3][c]];
 
+        let originalRow = row.slice();
+
         row.reverse();
         row = slide(row);
         row.reverse();
+
+        let changedIndices = [];
+        for(let r = 0; r < rows; r++){
+            if(originalRow[r] !== row[r]){
+                changedIndices.push(r);
+            }
+        }
 
         for(let r = 0; r < rows; r++){
             
@@ -196,6 +243,13 @@ function slideDown(){
             let tile = document.getElementById(r.toString() + "-" + c.toString());
             let num = board[r][c];
             updateTile(tile, num);
+
+            if(changedIndices.includes(r) && num !== 0){
+                tile.style.animation = "slide-from-top 0.3s";
+                setTimeout(() => {
+                    tile.style.animation = "";
+                }, 300);
+            }
 
         }
 
@@ -335,3 +389,68 @@ function restartGame(){
     setTwo();
 
 }
+
+
+// Declare variables for the touch input
+let startX =0;
+let startY = 0;
+
+// This will listen to when we touch as screen and assigns the xcoordanates of that
+document.addEventListener("touchstart", (e) => {
+	startX = e.touches[0].clientX;
+	startY = e.touches[0].clientY;
+	console.log(startX, startY);
+})
+
+// This will check for where you touc your screen and prevents scrolling if your touc input targets any element that includes the word tile in their class name.
+document.addEventListener('touchmove', (e) =>{
+	if(!e.target.className.includes("tile")){
+		return;
+	}
+
+	e.preventDefault(); //This line disables scrollingg
+}, {passive: false})
+
+// Event Listener that will listen to the touch end
+document.addEventListener('touchend', (e) => {
+	// Check if the elemnt that triggered the event has a class name containing tile.
+	if(!e.target.className.includes("tile")){
+		return;
+	}
+
+	let diffX = startX - e.changedTouches[0].clientX;
+	let diffY = startY - e.changedTouches[0].clientY;
+
+	if (Math.abs(diffX) > Math.abs(diffY)) {
+        // Horizontal swipe
+        if (diffX > 0) {
+            slideLeft(); // Call a function for sliding left
+            setTwo(); // Call a function named "setTwo"
+        } else {
+            slideRight(); // Call a function for sliding right
+            setTwo(); // Call a function named "setTwo"
+        }
+    } else {
+        // Vertical swipe
+        if (diffY > 0) {
+            slideUp(); // Call a function for sliding up
+            setTwo(); // Call a function named "setTwo"
+        } else {
+            slideDown(); // Call a function for sliding down
+            setTwo(); // Call a function named "setTwo"
+        }
+    }
+
+    document.getElementById("score").innerText = score;
+    checkWin();
+    if(hasLost()){
+        setTimeout(()=>{
+            alert('Game over! You lost.');
+            restartGame();
+            alert('Click any arrow key to restart the game.');
+        }, 100)
+    }
+
+})
+
+
